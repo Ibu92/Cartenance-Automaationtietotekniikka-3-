@@ -1,5 +1,4 @@
 import "dotenv/config";
-import AdmZip from "adm-zip";
 import bcrypt from "bcryptjs";
 import cors from "cors";
 import express from "express";
@@ -244,25 +243,6 @@ app.get("/api/export/pdf/:carId", requireAuth, requireCarOwner, async (req, res)
     doc.text(row.description).moveDown();
   });
   doc.end();
-});
-
-app.get("/api/export", requireAuth, (_req, res) => {
-  const zip = new AdmZip();
-  const root = process.cwd();
-  const skip = new Set(["node_modules", ".git", "data", "dist"]);
-  const walk = (dir: string) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (skip.has(entry.name) || entry.name.endsWith(".log")) continue;
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else zip.addLocalFile(full, path.relative(root, dir));
-    }
-  };
-  walk(root);
-  const buffer = zip.toBuffer();
-  res.setHeader("Content-Type", "application/zip");
-  res.setHeader("Content-Disposition", "attachment; filename=\"cartenance-project.zip\"");
-  res.send(buffer);
 });
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));

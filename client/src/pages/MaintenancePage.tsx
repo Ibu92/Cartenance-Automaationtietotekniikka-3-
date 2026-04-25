@@ -1,10 +1,10 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Bell, Camera, FileDown, Gauge, Plus, Trash2, Upload } from "lucide-react";
+import { Bell, Camera, Download, FileDown, Gauge, Plus, Trash2, Upload } from "lucide-react";
 import { api, money, nextMaintenance } from "../lib/api";
 import { Shell } from "../components/Shell";
 import { useApp } from "../state";
-import type { Car, Currency, MaintenanceRecord, MaintenanceType } from "../types";
+import type { Car, Currency, MaintenanceRecord, MaintenanceType, Photo } from "../types";
 
 type NewRecord = {
   date: string;
@@ -23,6 +23,7 @@ export function MaintenancePage() {
   const [records, setRecords] = useState<MaintenanceRecord[]>([]);
   const [filter, setFilter] = useState<"all" | MaintenanceType>("all");
   const [error, setError] = useState("");
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [form, setForm] = useState<NewRecord>({ date: new Date().toISOString().slice(0, 10), kilometers: 0, title: "", description: "", cost: null, type: "maintenance", currency: user?.defaultCurrency ?? "EUR" });
   const car = cars.find((item) => item.id === Number(carId));
   const filtered = filter === "all" ? records : records.filter((record) => record.type === filter);
@@ -74,40 +75,46 @@ export function MaintenancePage() {
     await load();
   }
 
+  const photoUrl = selectedPhoto ? `/uploads/${selectedPhoto.fileName}` : "";
+
   return (
     <Shell>
       <section className="page-head">
         <div>
-          <Link to="/" className="back-link">← Vehicles</Link>
-          <h1>{car ? car.name : "Maintenance"}</h1>
-          <p>{car ? `${car.brand} ${car.model} · ${car.year}` : "Loading vehicle"}</p>
+          <Link to="/" className="back-link">← {t("backToVehicles")}</Link>
+          <h1>{car ? car.name : t("maintenance")}</h1>
+          <p>{car ? `${car.brand} ${car.model} · ${car.year}` : t("loadingVehicle")}</p>
         </div>
         <a className="button" href={`/api/export/pdf/${carId}`}><FileDown size={16} />PDF</a>
       </section>
       {error && <p className="error">{error}</p>}
       <section className="stats-grid">
         <div className={`stat-panel ${prediction.overdue ? "warning" : ""}`}>
-          <h2><Gauge size={18} />Next maintenance</h2>
-          <p className="big">{prediction.nextDate ?? "Add first record"}</p>
+          <h2><Gauge size={18} />{t("nextMaintenance")}</h2>
+          <p className="big">{prediction.nextDate ?? t("addFirstRecord")}</p>
           <div className="progress"><span style={{ width: `${prediction.progress}%` }} /></div>
-          <p>{prediction.nextKm.toLocaleString()} km target · {prediction.daysLeft ?? "-"} days</p>
+          <p>{prediction.nextKm.toLocaleString()} km {t("target")} · {prediction.daysLeft ?? "-"} {t("days")}</p>
         </div>
-        <div className="stat-panel"><h2>{t("costs")}</h2><p className="big">{money(totals.total, user?.defaultCurrency)}</p><p>{money(totals.maintenance, user?.defaultCurrency)} service · {money(totals.repair, user?.defaultCurrency)} repair</p></div>
+        <div className="stat-panel">
+          <h2>{t("costs")}</h2>
+          <p className="big">{money(totals.total, user?.defaultCurrency)}</p>
+          <p>{money(totals.maintenance, user?.defaultCurrency)} {t("serviceCost")} · {money(totals.repair, user?.defaultCurrency)} {t("repairCost")}</p>
+        </div>
       </section>
       <section className="layout-grid">
         <form className="panel compact-form" onSubmit={add}>
-          <h2><Plus size={18} />Add record</h2>
-          <label>Date<input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required /></label>
-          <label>Kilometers<input type="number" value={form.kilometers} onChange={(e) => setForm({ ...form, kilometers: Number(e.target.value) })} required /></label>
-          <label>Title<input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required /></label>
-          <label>Description<textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required /></label>
-          <label>Cost<input type="number" value={form.cost ?? ""} onChange={(e) => setForm({ ...form, cost: e.target.value ? Number(e.target.value) : null })} /></label>
-          <label>Type<select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as MaintenanceType })}><option value="maintenance">{t("maintenance")}</option><option value="repair">{t("repair")}</option></select></label>
+          <h2><Plus size={18} />{t("addRecord")}</h2>
+          <label>{t("date")}<input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required /></label>
+          <label>{t("kilometers")}<input type="number" value={form.kilometers} onChange={(e) => setForm({ ...form, kilometers: Number(e.target.value) })} required /></label>
+          <label>{t("title")}<input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required /></label>
+          <label>{t("description")}<textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required /></label>
+          <label>{t("cost")}<input type="number" value={form.cost ?? ""} onChange={(e) => setForm({ ...form, cost: e.target.value ? Number(e.target.value) : null })} /></label>
+          <label>{t("type")}<select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as MaintenanceType })}><option value="maintenance">{t("maintenance")}</option><option value="repair">{t("repair")}</option></select></label>
           <button className="button">{t("save")}</button>
         </form>
         <div className="history-column">
           <div className="segmented">
-            {(["all", "maintenance", "repair"] as const).map((item) => <button key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>{item}</button>)}
+            {(["all", "maintenance", "repair"] as const).map((item) => <button key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>{t(item)}</button>)}
           </div>
           {filtered.map((record) => (
             <article className="record-card" key={record.id}>
@@ -120,14 +127,33 @@ export function MaintenancePage() {
               </div>
               <p>{record.description}</p>
               <div className="photo-strip">
-                {record.photos.map((photo) => <img key={photo.id} src={`/uploads/${photo.fileName}`} alt="" />)}
+                {record.photos.map((photo) => (
+                  <button key={photo.id} className="photo-thumb" onClick={() => setSelectedPhoto(photo)} title={t("openPhoto")} type="button">
+                    <img src={`/uploads/${photo.fileName}`} alt={t("openPhoto")} />
+                  </button>
+                ))}
                 <label className="photo-upload"><Camera size={18} /><Upload size={14} /><input type="file" accept="image/*" multiple onChange={(e) => uploadPhotos(record.id, e.target.files)} /></label>
               </div>
-              {record.reminders.length > 0 && <p className="muted">{record.reminders.length} active reminder(s)</p>}
+              {record.reminders.length > 0 && <p className="muted">{record.reminders.length} {t("activeReminders")}</p>}
             </article>
           ))}
         </div>
       </section>
+      {selectedPhoto && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <section className="modal photo-modal">
+            <div className="modal-head">
+              <h2>{t("photos")}</h2>
+              <button className="icon-button" onClick={() => setSelectedPhoto(null)} aria-label={t("close")}>×</button>
+            </div>
+            <img className="photo-preview" src={photoUrl} alt={t("photos")} />
+            <div className="modal-actions">
+              <button className="button ghost" onClick={() => setSelectedPhoto(null)}>{t("close")}</button>
+              <a className="button" href={photoUrl} download={selectedPhoto.fileName}><Download size={16} />{t("downloadPhoto")}</a>
+            </div>
+          </section>
+        </div>
+      )}
     </Shell>
   );
 }

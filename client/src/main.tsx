@@ -6,8 +6,6 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { CarsPage } from "./pages/CarsPage";
 import { MaintenancePage } from "./pages/MaintenancePage";
-import { ServicePersonnelPage } from "./pages/ServicePersonnelPage";
-import { DownloadPage } from "./pages/DownloadPage";
 import "./styles.css";
 
 function Protected({ children }: { children: React.ReactNode }) {
@@ -20,8 +18,6 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/service/:carId" element={<ServicePersonnelPage />} />
-      <Route path="/download" element={<Protected><DownloadPage /></Protected>} />
       <Route path="/cars/:carId" element={<Protected><MaintenancePage /></Protected>} />
       <Route path="/" element={<Protected><CarsPage /></Protected>} />
     </Routes>

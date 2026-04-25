@@ -1,4 +1,4 @@
-import { Download, LogOut, Moon, Settings, Sun, Wrench } from "lucide-react";
+import { LogOut, Moon, Settings, Sun, Wrench } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useApp } from "../state";
 import { SettingsDialog } from "./SettingsDialog";
@@ -17,7 +17,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span>Cartenance</span>
         </Link>
         <nav className="top-actions">
-          <Link className="icon-button" to="/download" title={t("export")}><Download size={18} /></Link>
           <button className="icon-button" title={t("settings")} onClick={() => setSettingsOpen(true)}><Settings size={18} /></button>
           <span className="theme-indicator" title={user?.theme ?? "system"}>{user?.theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}</span>
           <button className="button ghost" onClick={() => { logout(); navigate("/login"); }}><LogOut size={16} />{t("logout")}</button>

@@ -29,11 +29,11 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
       <section className="modal">
         <div className="modal-head">
           <h2>{t("settings")}</h2>
-          <button className="icon-button" onClick={onClose}>×</button>
+          <button className="icon-button" onClick={onClose} aria-label={t("close")}>×</button>
         </div>
-        <label>Currency<select value={form.defaultCurrency} onChange={(e) => setForm({ ...form, defaultCurrency: e.target.value as Currency })}>{["EUR", "USD", "GBP", "JPY", "THB", "INR"].map((c) => <option key={c}>{c}</option>)}</select></label>
-        <label>Language<select value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value as Language })}><option value="en">English</option><option value="fi">Suomi</option></select></label>
-        <label>Theme<select value={form.theme} onChange={(e) => setForm({ ...form, theme: e.target.value as Theme })}><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+        <label>{t("currency")}<select value={form.defaultCurrency} onChange={(e) => setForm({ ...form, defaultCurrency: e.target.value as Currency })}>{["EUR", "USD", "GBP", "JPY", "THB", "INR"].map((c) => <option key={c}>{c}</option>)}</select></label>
+        <label>{t("language")}<select value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value as Language })}><option value="en">{t("english")}</option><option value="fi">{t("finnish")}</option></select></label>
+        <label>{t("theme")}<select value={form.theme} onChange={(e) => setForm({ ...form, theme: e.target.value as Theme })}><option value="system">{t("system")}</option><option value="light">{t("light")}</option><option value="dark">{t("dark")}</option></select></label>
         {error && <p className="error">{error}</p>}
         <div className="modal-actions"><button className="button ghost" onClick={onClose}>{t("cancel")}</button><button className="button" onClick={save}>{t("save")}</button></div>
       </section>
