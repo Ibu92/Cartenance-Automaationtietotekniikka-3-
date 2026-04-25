@@ -1,0 +1,14 @@
+{
+  "name": "Cartenance",
+  "short_name": "Cartenance",
+  "description": "Car maintenance tracking for service history, reminders, costs, and QR sharing.",
+  "theme_color": "#8b5cf6",
+  "background_color": "#fef3c7",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
