@@ -1,6 +1,6 @@
 # Cartenance
 
-Cartenance is a car maintenance tracking app for vehicle owners. It includes a React PWA frontend, an Express API, SQLite persistence, photo uploads, reminders, and PDF exports.
+Cartenance is a car maintenance tracking app for vehicle owners. It includes a React PWA frontend, an Express API, SQLite persistence, photo uploads, and PDF exports.
 
 ## Features
 
@@ -8,7 +8,6 @@ Cartenance is a car maintenance tracking app for vehicle owners. It includes a R
 - Multiple vehicles per user
 - Maintenance and repair history with costs, mileage, and photos
 - Automatic next-maintenance prediction based on one year or 20,000 km
-- Reminder settings and per-record reminders
 - User settings for currency, language, and theme
 - PDF vehicle report export
 - PWA manifest and service worker

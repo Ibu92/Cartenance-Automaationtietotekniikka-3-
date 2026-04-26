@@ -60,7 +60,7 @@ export function CarsPage() {
               </div>
               <div className="card-actions">
                 <button className="icon-button danger" onClick={() => remove(car.id)} title={t("delete")}><Trash2 size={18} /></button>
-                <Link className="button" to={`/cars/${car.id}`}>{t("maintenance")}</Link>
+                <Link className="button" to={`/cars/${car.id}`}>{t("openVehicle")}</Link>
               </div>
             </article>
           ))}

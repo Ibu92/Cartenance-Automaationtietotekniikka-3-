@@ -21,7 +21,7 @@ const dict: Record<Language, Record<string, string>> = {
     brand: "Brand",
     cancel: "Cancel",
     cars: "Vehicles",
-    carsLead: "Track service history, costs, due dates, and reminders.",
+    carsLead: "Track service history, costs, and due dates.",
     close: "Close",
     cost: "Cost",
     costs: "Costs",
@@ -43,15 +43,16 @@ const dict: Record<Language, Record<string, string>> = {
     loadingVehicle: "Loading vehicle",
     logout: "Logout",
     maintenance: "Maintenance",
+    maintenanceFileSuffix: "maintenance",
     model: "Model",
     name: "Name",
     nextMaintenance: "Next maintenance",
     openPhoto: "Open photo",
+    openVehicle: "Open",
     photos: "Photos",
     projectZip: "Project ZIP",
     projectZipDescription: "Source archive without node_modules, uploads, or local database data.",
     records: "records",
-    reminders: "Reminders",
     repair: "Repair",
     repairCost: "repair",
     save: "Save",
@@ -62,8 +63,7 @@ const dict: Record<Language, Record<string, string>> = {
     theme: "Theme",
     title: "Title",
     type: "Type",
-    year: "Year",
-    activeReminders: "active reminder(s)"
+    year: "Year"
   },
   fi: {
     addCar: "Lisää ajoneuvo",
@@ -74,7 +74,7 @@ const dict: Record<Language, Record<string, string>> = {
     brand: "Merkki",
     cancel: "Peruuta",
     cars: "Ajoneuvot",
-    carsLead: "Seuraa huoltohistoriaa, kuluja, määräaikoja ja muistutuksia.",
+    carsLead: "Seuraa huoltohistoriaa, kuluja ja määräaikoja.",
     close: "Sulje",
     cost: "Hinta",
     costs: "Kulut",
@@ -96,15 +96,16 @@ const dict: Record<Language, Record<string, string>> = {
     loadingVehicle: "Ladataan ajoneuvoa",
     logout: "Kirjaudu ulos",
     maintenance: "Huolto",
+    maintenanceFileSuffix: "huoltoraportti",
     model: "Malli",
     name: "Nimi",
     nextMaintenance: "Seuraava huolto",
     openPhoto: "Avaa kuva",
+    openVehicle: "Avaa",
     photos: "Kuvat",
     projectZip: "Projektin ZIP",
     projectZipDescription: "Lähdekoodiarkisto ilman node_modules-kansiota, latauksia tai paikallista tietokantaa.",
     records: "merkintää",
-    reminders: "Muistutukset",
     repair: "Korjaus",
     repairCost: "korjaukset",
     save: "Tallenna",
@@ -115,8 +116,7 @@ const dict: Record<Language, Record<string, string>> = {
     theme: "Teema",
     title: "Otsikko",
     type: "Tyyppi",
-    year: "Vuosi",
-    activeReminders: "aktiivista muistutusta"
+    year: "Vuosi"
   }
 };
 

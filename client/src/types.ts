@@ -26,16 +26,6 @@ export type Car = {
 };
 
 export type Photo = { id: number; maintenanceId: number; fileName: string; uploadedAt: string };
-export type Reminder = {
-  id: number;
-  maintenanceId: number;
-  reminderType: "date" | "mileage" | "both";
-  reminderDate: string | null;
-  reminderKm: number | null;
-  snoozedUntil: string | null;
-  snoozedKmUntil: number | null;
-  isActive: number;
-};
 
 export type MaintenanceRecord = {
   id: number;
@@ -48,5 +38,4 @@ export type MaintenanceRecord = {
   type: MaintenanceType;
   currency: Currency;
   photos: Photo[];
-  reminders: Reminder[];
 };

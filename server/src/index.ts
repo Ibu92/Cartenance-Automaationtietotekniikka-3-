@@ -9,7 +9,7 @@ import { z } from "zod";
 import { requireAuth, requireCarOwner, signToken, type AuthedRequest } from "./auth.js";
 import { db, migrate, now, uploadDir } from "./db.js";
 import { upload } from "./upload.js";
-import type { Currency, Language, MaintenanceType, ReminderType, Theme } from "./types.js";
+import type { Currency, Language, Theme } from "./types.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 4000);
@@ -21,6 +21,38 @@ app.use("/uploads", express.static(uploadDir));
 const currencySchema = z.enum(["EUR", "USD", "GBP", "JPY", "THB", "INR"]);
 const maintenanceTypeSchema = z.enum(["maintenance", "repair"]);
 const authSchema = z.object({ email: z.string().email(), password: z.string().min(8) });
+const pdfText = {
+  en: {
+    report: "maintenance report",
+    vehicle: "Vehicle",
+    history: "Maintenance history",
+    kilometers: "Kilometers",
+    type: "Type",
+    cost: "Cost",
+    maintenance: "Maintenance",
+    repair: "Repair",
+    noRecords: "No maintenance records yet",
+    fileSuffix: "maintenance",
+    totalCosts: "Total costs",
+    serviceCosts: "Maintenance costs",
+    repairCosts: "Repair costs"
+  },
+  fi: {
+    report: "huoltoraportti",
+    vehicle: "Ajoneuvo",
+    history: "Huoltohistoria",
+    kilometers: "Kilometrit",
+    type: "Tyyppi",
+    cost: "Hinta",
+    maintenance: "Huolto",
+    repair: "Korjaus",
+    noRecords: "Ei huoltomerkintöjä",
+    fileSuffix: "huoltoraportti",
+    totalCosts: "Kulut yhteensä",
+    serviceCosts: "Huoltokulut",
+    repairCosts: "Korjauskulut"
+  }
+} satisfies Record<Language, Record<string, string>>;
 
 function publicUser(user: { id: number; email: string; defaultCurrency: Currency; language: Language; theme: Theme }) {
   return { id: user.id, email: user.email, defaultCurrency: user.defaultCurrency, language: user.language, theme: user.theme };
@@ -48,7 +80,6 @@ app.post("/api/auth/register", async (req, res) => {
       .values({ email: body.data.email.toLowerCase(), password: hash, defaultCurrency: "EUR", language: "en", theme: "system", createdAt: now() })
       .returning(["id", "email", "defaultCurrency", "language", "theme"])
       .executeTakeFirstOrThrow();
-    await db.insertInto("reminder_settings").values({ userId: user.id, emailEnabled: 0, pushEnabled: 0, email: user.email, daysBeforeReminder: 7, kmBeforeReminder: 1000, createdAt: now(), updatedAt: now() }).execute();
     res.json({ token: signToken(user), user: publicUser(user) });
   } catch {
     res.status(409).json({ error: "Email already registered" });
@@ -107,8 +138,7 @@ app.get("/api/maintenance/:carId", requireAuth, requireCarOwner, async (req, res
   const rows = await db.selectFrom("maintenance").selectAll().where("carId", "=", Number(req.params.carId)).orderBy("date", "desc").execute();
   const withPhotos = await Promise.all(rows.map(async (row) => ({
     ...row,
-    photos: await db.selectFrom("photos").selectAll().where("maintenanceId", "=", row.id).execute(),
-    reminders: await db.selectFrom("maintenance_reminders").selectAll().where("maintenanceId", "=", row.id).execute()
+    photos: await db.selectFrom("photos").selectAll().where("maintenanceId", "=", row.id).execute()
   })));
   res.json(withPhotos);
 });
@@ -156,54 +186,6 @@ app.delete("/api/photos/:photoId", requireAuth, async (req: AuthedRequest, res) 
   res.json({ ok: true });
 });
 
-app.get("/api/reminder-settings", requireAuth, async (req: AuthedRequest, res) => {
-  let settings = await db.selectFrom("reminder_settings").selectAll().where("userId", "=", req.user!.id).executeTakeFirst();
-  if (!settings) {
-    settings = await db.insertInto("reminder_settings").values({ userId: req.user!.id, emailEnabled: 0, pushEnabled: 0, email: req.user!.email, daysBeforeReminder: 7, kmBeforeReminder: 1000, createdAt: now(), updatedAt: now() }).returningAll().executeTakeFirstOrThrow();
-  }
-  res.json(settings);
-});
-
-app.post("/api/reminder-settings", requireAuth, async (req: AuthedRequest, res) => {
-  const body = z.object({ emailEnabled: z.boolean(), pushEnabled: z.boolean(), email: z.string().email().nullable(), daysBeforeReminder: z.number().int().min(0), kmBeforeReminder: z.number().int().min(0) }).safeParse(req.body);
-  if (!body.success) return res.status(400).json({ error: "Invalid reminder settings" });
-  const values = { ...body.data, emailEnabled: body.data.emailEnabled ? 1 : 0, pushEnabled: body.data.pushEnabled ? 1 : 0, updatedAt: now() };
-  const row = await db.updateTable("reminder_settings").set(values).where("userId", "=", req.user!.id).returningAll().executeTakeFirst();
-  res.json(row);
-});
-
-app.get("/api/maintenance/:maintenanceId/reminders", requireAuth, async (req: AuthedRequest, res) => {
-  const maintenanceId = Number(req.params.maintenanceId);
-  if (!(await ownsMaintenance(req.user!.id, maintenanceId))) return res.status(404).json({ error: "Record not found" });
-  res.json(await db.selectFrom("maintenance_reminders").selectAll().where("maintenanceId", "=", maintenanceId).execute());
-});
-
-app.post("/api/maintenance/:maintenanceId/reminders", requireAuth, async (req: AuthedRequest, res) => {
-  const maintenanceId = Number(req.params.maintenanceId);
-  if (!(await ownsMaintenance(req.user!.id, maintenanceId))) return res.status(404).json({ error: "Record not found" });
-  const body = z.object({ reminderType: z.enum(["date", "mileage", "both"]), reminderDate: z.string().nullable().optional(), reminderKm: z.number().int().nullable().optional(), isActive: z.boolean().default(true) }).safeParse(req.body);
-  if (!body.success) return res.status(400).json({ error: "Invalid reminder" });
-  const row = await db.insertInto("maintenance_reminders").values({ maintenanceId, reminderType: body.data.reminderType as ReminderType, reminderDate: body.data.reminderDate ?? null, reminderKm: body.data.reminderKm ?? null, snoozedUntil: null, snoozedKmUntil: null, lastNotifiedAt: null, isActive: body.data.isActive ? 1 : 0, createdAt: now() }).returningAll().executeTakeFirstOrThrow();
-  res.json(row);
-});
-
-app.post("/api/reminders/:reminderId/snooze", requireAuth, async (req: AuthedRequest, res) => {
-  const body = z.object({ days: z.number().int().min(0).optional(), kilometers: z.number().int().min(0).optional() }).safeParse(req.body);
-  if (!body.success) return res.status(400).json({ error: "Invalid snooze" });
-  const reminder = await db.selectFrom("maintenance_reminders").innerJoin("maintenance", "maintenance.id", "maintenance_reminders.maintenanceId").innerJoin("cars", "cars.id", "maintenance.carId").select(["maintenance_reminders.id"]).where("maintenance_reminders.id", "=", Number(req.params.reminderId)).where("cars.userId", "=", req.user!.id).executeTakeFirst();
-  if (!reminder) return res.status(404).json({ error: "Reminder not found" });
-  const snoozedUntil = body.data.days ? new Date(Date.now() + body.data.days * 86400000).toISOString().slice(0, 10) : null;
-  const row = await db.updateTable("maintenance_reminders").set({ snoozedUntil, snoozedKmUntil: body.data.kilometers ?? null }).where("id", "=", reminder.id).returningAll().executeTakeFirstOrThrow();
-  res.json(row);
-});
-
-app.delete("/api/reminders/:reminderId", requireAuth, async (req: AuthedRequest, res) => {
-  const reminder = await db.selectFrom("maintenance_reminders").innerJoin("maintenance", "maintenance.id", "maintenance_reminders.maintenanceId").innerJoin("cars", "cars.id", "maintenance.carId").select(["maintenance_reminders.id"]).where("maintenance_reminders.id", "=", Number(req.params.reminderId)).where("cars.userId", "=", req.user!.id).executeTakeFirst();
-  if (!reminder) return res.status(404).json({ error: "Reminder not found" });
-  await db.deleteFrom("maintenance_reminders").where("id", "=", reminder.id).execute();
-  res.json({ ok: true });
-});
-
 app.get("/api/service/:carId/car", async (req, res) => {
   const car = await db.selectFrom("cars").select(["id", "name", "brand", "model", "year"]).where("id", "=", Number(req.params.carId)).executeTakeFirst();
   if (!car) return res.status(404).json({ error: "Vehicle not found" });
@@ -230,16 +212,37 @@ app.post("/api/service/:maintenanceId/photos", upload.array("photos", 5), async 
 app.get("/api/export/pdf/:carId", requireAuth, requireCarOwner, async (req, res) => {
   const car = await db.selectFrom("cars").selectAll().where("id", "=", Number(req.params.carId)).executeTakeFirstOrThrow();
   const rows = await db.selectFrom("maintenance").selectAll().where("carId", "=", car.id).orderBy("date", "desc").execute();
+  const user = await db.selectFrom("users").select(["language", "defaultCurrency"]).where("id", "=", (req as AuthedRequest).user!.id).executeTakeFirstOrThrow();
+  const language = user.language;
+  const text = pdfText[language];
+  const locale = language === "fi" ? "fi-FI" : "en-US";
+  const formatDate = (value: string) => new Intl.DateTimeFormat(locale).format(new Date(value));
+  const formatCost = (cost: number | null, currency: Currency) => new Intl.NumberFormat(locale, { style: "currency", currency }).format(cost ?? 0);
+  const reportCurrency = rows[0]?.currency ?? user.defaultCurrency;
+  const totalCosts = rows.reduce((sum, row) => sum + (row.cost ?? 0), 0);
+  const serviceCosts = rows.filter((row) => row.type === "maintenance").reduce((sum, row) => sum + (row.cost ?? 0), 0);
+  const repairCosts = rows.filter((row) => row.type === "repair").reduce((sum, row) => sum + (row.cost ?? 0), 0);
+  const safeName = car.name.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-|-$/g, "") || "vehicle";
   res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `attachment; filename="${car.name}-maintenance.pdf"`);
+  res.setHeader("Content-Disposition", `attachment; filename="${safeName}-${text.fileSuffix}.pdf"`);
   const doc = new PDFDocument({ margin: 48 });
   doc.pipe(res);
-  doc.fontSize(22).text(`${car.name} maintenance report`);
-  doc.moveDown().fontSize(12).text(`${car.brand} ${car.model} (${car.year})`);
+  doc.fontSize(22).text(`${car.name} ${text.report}`);
+  doc.moveDown().fontSize(12).text(`${text.vehicle}: ${car.brand} ${car.model} (${car.year})`);
   doc.moveDown();
+  doc.fontSize(15).text(text.totalCosts);
+  doc.fontSize(10).text(`${text.totalCosts}: ${formatCost(totalCosts, reportCurrency)}`);
+  doc.text(`${text.serviceCosts}: ${formatCost(serviceCosts, reportCurrency)}`);
+  doc.text(`${text.repairCosts}: ${formatCost(repairCosts, reportCurrency)}`);
+  doc.moveDown();
+
+  if (!rows.length) {
+    doc.fontSize(12).text(text.noRecords);
+  }
+
   rows.forEach((row) => {
-    doc.fontSize(14).text(`${row.date} - ${row.title}`);
-    doc.fontSize(10).text(`${row.kilometers} km | ${row.type} | ${row.cost ?? 0} ${row.currency}`);
+    doc.fontSize(14).text(`${formatDate(row.date)} - ${row.title}`);
+    doc.fontSize(10).text(`${text.kilometers}: ${row.kilometers.toLocaleString(locale)} km | ${text.type}: ${text[row.type]} | ${text.cost}: ${formatCost(row.cost, row.currency)}`);
     doc.text(row.description).moveDown();
   });
   doc.end();

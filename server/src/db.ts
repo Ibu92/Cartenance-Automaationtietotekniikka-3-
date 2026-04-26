@@ -70,39 +70,6 @@ export async function migrate() {
 
   await sql`CREATE INDEX IF NOT EXISTS photos_maintenance_idx ON photos(maintenanceId)`.execute(db);
 
-  await sql`
-    CREATE TABLE IF NOT EXISTS reminder_settings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      userId INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-      emailEnabled INTEGER NOT NULL DEFAULT 0,
-      pushEnabled INTEGER NOT NULL DEFAULT 0,
-      email TEXT,
-      daysBeforeReminder INTEGER NOT NULL DEFAULT 7,
-      kmBeforeReminder INTEGER NOT NULL DEFAULT 1000,
-      createdAt TEXT NOT NULL,
-      updatedAt TEXT NOT NULL
-    )
-  `.execute(db);
-
-  await sql`CREATE INDEX IF NOT EXISTS reminder_settings_user_idx ON reminder_settings(userId)`.execute(db);
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS maintenance_reminders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      maintenanceId INTEGER NOT NULL REFERENCES maintenance(id) ON DELETE CASCADE,
-      reminderType TEXT NOT NULL,
-      reminderDate TEXT,
-      reminderKm INTEGER,
-      snoozedUntil TEXT,
-      snoozedKmUntil INTEGER,
-      lastNotifiedAt TEXT,
-      isActive INTEGER NOT NULL DEFAULT 1,
-      createdAt TEXT NOT NULL
-    )
-  `.execute(db);
-
-  await sql`CREATE INDEX IF NOT EXISTS reminders_maintenance_idx ON maintenance_reminders(maintenanceId)`.execute(db);
-  await sql`CREATE INDEX IF NOT EXISTS reminders_active_idx ON maintenance_reminders(isActive)`.execute(db);
 }
 
 export const now = () => new Date().toISOString();
