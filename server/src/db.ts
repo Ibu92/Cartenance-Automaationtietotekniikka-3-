@@ -23,10 +23,12 @@ export async function migrate() {
       password TEXT NOT NULL,
       defaultCurrency TEXT NOT NULL DEFAULT 'EUR',
       language TEXT NOT NULL DEFAULT 'en',
-      theme TEXT NOT NULL DEFAULT 'system',
+      theme TEXT NOT NULL DEFAULT 'dark',
       createdAt TEXT NOT NULL
     )
   `.execute(db);
+
+  await sql`UPDATE users SET theme = 'dark' WHERE theme = 'system'`.execute(db);
 
   await sql`
     CREATE TABLE IF NOT EXISTS cars (

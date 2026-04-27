@@ -77,7 +77,7 @@ app.post("/api/auth/register", async (req, res) => {
   try {
     const user = await db
       .insertInto("users")
-      .values({ email: body.data.email.toLowerCase(), password: hash, defaultCurrency: "EUR", language: "en", theme: "system", createdAt: now() })
+      .values({ email: body.data.email.toLowerCase(), password: hash, defaultCurrency: "EUR", language: "en", theme: "dark", createdAt: now() })
       .returning(["id", "email", "defaultCurrency", "language", "theme"])
       .executeTakeFirstOrThrow();
     res.json({ token: signToken(user), user: publicUser(user) });
@@ -100,7 +100,7 @@ app.get("/api/user/settings", requireAuth, async (req: AuthedRequest, res) => {
 });
 
 app.put("/api/user/settings", requireAuth, async (req: AuthedRequest, res) => {
-  const body = z.object({ defaultCurrency: currencySchema, language: z.enum(["en", "fi"]), theme: z.enum(["light", "dark", "system"]) }).safeParse(req.body);
+  const body = z.object({ defaultCurrency: currencySchema, language: z.enum(["en", "fi"]), theme: z.enum(["light", "dark"]) }).safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: "Invalid settings" });
   const user = await db.updateTable("users").set(body.data).where("id", "=", req.user!.id).returning(["id", "email", "defaultCurrency", "language", "theme"]).executeTakeFirstOrThrow();
   res.json(publicUser(user));

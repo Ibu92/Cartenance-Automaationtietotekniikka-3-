@@ -1,6 +1,6 @@
 export type Currency = "EUR" | "USD" | "GBP" | "JPY" | "THB" | "INR";
 export type Language = "en" | "fi";
-export type Theme = "light" | "dark" | "system";
+export type Theme = "light" | "dark";
 export type MaintenanceType = "maintenance" | "repair";
 
 export type User = {

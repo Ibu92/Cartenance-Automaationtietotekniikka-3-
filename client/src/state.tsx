@@ -58,7 +58,6 @@ const dict: Record<Language, Record<string, string>> = {
     save: "Save",
     serviceCost: "service",
     settings: "Settings",
-    system: "System",
     target: "target",
     theme: "Theme",
     title: "Title",
@@ -111,7 +110,6 @@ const dict: Record<Language, Record<string, string>> = {
     save: "Tallenna",
     serviceCost: "huollot",
     settings: "Asetukset",
-    system: "Järjestelmä",
     target: "tavoite",
     theme: "Teema",
     title: "Otsikko",
@@ -130,7 +128,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    document.documentElement.dataset.theme = user?.theme === "system" || !user?.theme ? "" : user.theme;
+    document.documentElement.dataset.theme = user?.theme === "light" ? "light" : "dark";
   }, [user?.theme]);
 
   const login = (nextToken: string, nextUser: User) => {
