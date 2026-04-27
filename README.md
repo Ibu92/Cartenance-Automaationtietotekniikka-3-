@@ -130,6 +130,14 @@ Run the TypeScript and production build check:
 npm run check
 ```
 
+Run the automated API smoke test:
+
+```bash
+npm run test:smoke
+```
+
+Run this while the application is running with `npm run dev`. The smoke test verifies the main backend flow: registration, login, settings update, vehicle creation, maintenance and repair record creation, history retrieval, cost summary, and PDF download.
+
 Manual test cases are documented in [docs/TESTING.md](docs/TESTING.md).
 
 ## Documentation

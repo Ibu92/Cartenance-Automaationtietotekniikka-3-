@@ -12,7 +12,8 @@
     "open:android": "npx cap open android",
     "start": "node server/dist/index.js",
     "server:build": "tsc -p server/tsconfig.json",
-    "check": "npm run server:build && npm --prefix client run build"
+    "check": "npm run server:build && npm --prefix client run build",
+    "test:smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",

@@ -8,6 +8,39 @@ This document describes the main manual and technical checks used to verify Cart
 | --- | --- | --- | --- |
 | TypeScript and production build | Run `npm run check` | Backend TypeScript build and frontend production build complete successfully | Passed |
 
+## Automated Smoke Test
+
+The project includes an API smoke test that verifies the most important backend workflow.
+
+Command:
+
+```bash
+npm run test:smoke
+```
+
+The application must be running with `npm run dev` before this command is executed.
+
+The smoke test checks:
+
+- API health check
+- User registration
+- User login
+- User settings update
+- Vehicle creation
+- Maintenance record creation
+- Repair record creation
+- Vehicle history retrieval
+- Vehicle list and cost summary
+- PDF report download
+
+Expected result:
+
+```text
+[smoke] Smoke test passed
+```
+
+Status: Passed
+
 ## Manual Functional Tests
 
 | Requirement | Test Steps | Expected Result | Status |
