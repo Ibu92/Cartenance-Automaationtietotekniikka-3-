@@ -18,7 +18,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </Link>
         <nav className="top-actions">
           <button className="icon-button" title={t("settings")} onClick={() => setSettingsOpen(true)}><Settings size={18} /></button>
-          <span className="theme-indicator" title={user?.theme ?? "system"}>{user?.theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}</span>
+          <span className="theme-indicator" title={user?.theme ?? "dark"}>{user?.theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}</span>
           <button className="button ghost" onClick={() => { logout(); navigate("/login"); }}><LogOut size={16} />{t("logout")}</button>
         </nav>
       </header>
