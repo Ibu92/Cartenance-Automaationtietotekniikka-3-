@@ -4,7 +4,7 @@ import { Camera, Download, FileDown, Gauge, Trash2, Upload } from "lucide-react"
 import { api, money, nextMaintenance } from "../lib/api";
 import { Shell } from "../components/Shell";
 import { useApp } from "../state";
-import type { Car, Currency, MaintenanceRecord, MaintenanceType, Photo } from "../types";
+import type { Car, MaintenanceRecord, MaintenanceType, Photo } from "../types";
 
 type NewRecord = {
   date: string;
@@ -13,18 +13,17 @@ type NewRecord = {
   description: string;
   cost: number | null;
   type: MaintenanceType;
-  currency: Currency;
 };
 
 export function MaintenancePage() {
   const { carId } = useParams();
-  const { token, user, t } = useApp();
+  const { token, t } = useApp();
   const [cars, setCars] = useState<Car[]>([]);
   const [records, setRecords] = useState<MaintenanceRecord[]>([]);
   const [filter, setFilter] = useState<"all" | MaintenanceType>("all");
   const [error, setError] = useState("");
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
-  const [form, setForm] = useState<NewRecord>({ date: new Date().toISOString().slice(0, 10), kilometers: 0, title: "", description: "", cost: null, type: "maintenance", currency: user?.defaultCurrency ?? "EUR" });
+  const [form, setForm] = useState<NewRecord>({ date: new Date().toISOString().slice(0, 10), kilometers: 0, title: "", description: "", cost: null, type: "maintenance" });
   const car = cars.find((item) => item.id === Number(carId));
   const filtered = filter === "all" ? records : records.filter((record) => record.type === filter);
   const maintenanceRecords = useMemo(() => records.filter((record) => record.type === "maintenance"), [records]);
@@ -111,10 +110,10 @@ export function MaintenancePage() {
         </div>
         <div className="stat-panel">
           <h2>{t("costs")}</h2>
-          <p className="big">{money(totals.total, user?.defaultCurrency)}</p>
+          <p className="big">{money(totals.total)}</p>
           <div className="cost-breakdown">
-            <div><span>{t("serviceCost")}</span><strong>{money(totals.maintenance, user?.defaultCurrency)}</strong></div>
-            <div><span>{t("repairCost")}</span><strong>{money(totals.repair, user?.defaultCurrency)}</strong></div>
+            <div><span>{t("serviceCost")}</span><strong>{money(totals.maintenance)}</strong></div>
+            <div><span>{t("repairCost")}</span><strong>{money(totals.repair)}</strong></div>
           </div>
         </div>
       </section>
@@ -136,7 +135,7 @@ export function MaintenancePage() {
           {filtered.map((record) => (
             <article className="record-card" key={record.id}>
               <div className="record-head">
-                <div><h2>{record.title}</h2><p>{record.date} - {record.kilometers.toLocaleString()} km - {money(record.cost, record.currency)}</p></div>
+                <div><h2>{record.title}</h2><p>{record.date} - {record.kilometers.toLocaleString()} km - {money(record.cost)}</p></div>
                 <div className="card-actions">
                   <button className="icon-button danger" title={t("delete")} onClick={() => remove(record.id)}><Trash2 size={18} /></button>
                 </div>

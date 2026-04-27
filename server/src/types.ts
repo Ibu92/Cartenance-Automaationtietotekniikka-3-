@@ -1,6 +1,5 @@
 import type { Generated, Insertable, Selectable, Updateable } from "kysely";
 
-export type Currency = "EUR" | "USD" | "GBP" | "JPY" | "THB" | "INR";
 export type Language = "en" | "fi";
 export type Theme = "light" | "dark";
 export type MaintenanceType = "maintenance" | "repair";
@@ -16,7 +15,7 @@ export interface UserTable {
   id: Generated<number>;
   email: string;
   password: string;
-  defaultCurrency: Currency;
+  defaultCurrency: "EUR";
   language: Language;
   theme: Theme;
   createdAt: string;
@@ -41,7 +40,7 @@ export interface MaintenanceTable {
   description: string;
   cost: number | null;
   type: MaintenanceType;
-  currency: Currency;
+  currency: "EUR";
   createdAt: string;
 }
 

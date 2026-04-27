@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import type { Currency, Language, Theme, User } from "./types";
+import type { Language, Theme, User } from "./types";
 import { api } from "./lib/api";
 
 type AppState = {
@@ -25,7 +25,6 @@ const dict: Record<Language, Record<string, string>> = {
     close: "Close",
     cost: "Cost",
     costs: "Costs",
-    currency: "Currency",
     dark: "Dark",
     date: "Date",
     days: "days",
@@ -77,7 +76,6 @@ const dict: Record<Language, Record<string, string>> = {
     close: "Sulje",
     cost: "Hinta",
     costs: "Kulut",
-    currency: "Valuutta",
     dark: "Tumma",
     date: "Päivä",
     days: "päivää",

@@ -9,7 +9,7 @@ import { z } from "zod";
 import { requireAuth, requireCarOwner, signToken, type AuthedRequest } from "./auth.js";
 import { db, migrate, now, uploadDir } from "./db.js";
 import { upload } from "./upload.js";
-import type { Currency, Language, Theme } from "./types.js";
+import type { Language, Theme } from "./types.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 4000);
@@ -18,7 +18,6 @@ app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 app.use("/uploads", express.static(uploadDir));
 
-const currencySchema = z.enum(["EUR", "USD", "GBP", "JPY", "THB", "INR"]);
 const maintenanceTypeSchema = z.enum(["maintenance", "repair"]);
 const authSchema = z.object({ email: z.string().email(), password: z.string().min(8) });
 const pdfText = {
@@ -54,8 +53,8 @@ const pdfText = {
   }
 } satisfies Record<Language, Record<string, string>>;
 
-function publicUser(user: { id: number; email: string; defaultCurrency: Currency; language: Language; theme: Theme }) {
-  return { id: user.id, email: user.email, defaultCurrency: user.defaultCurrency, language: user.language, theme: user.theme };
+function publicUser(user: { id: number; email: string; language: Language; theme: Theme }) {
+  return { id: user.id, email: user.email, language: user.language, theme: user.theme };
 }
 
 async function ownsMaintenance(userId: number, maintenanceId: number) {
@@ -78,7 +77,7 @@ app.post("/api/auth/register", async (req, res) => {
     const user = await db
       .insertInto("users")
       .values({ email: body.data.email.toLowerCase(), password: hash, defaultCurrency: "EUR", language: "en", theme: "dark", createdAt: now() })
-      .returning(["id", "email", "defaultCurrency", "language", "theme"])
+      .returning(["id", "email", "language", "theme"])
       .executeTakeFirstOrThrow();
     res.json({ token: signToken(user), user: publicUser(user) });
   } catch {
@@ -95,14 +94,14 @@ app.post("/api/auth/login", async (req, res) => {
 });
 
 app.get("/api/user/settings", requireAuth, async (req: AuthedRequest, res) => {
-  const user = await db.selectFrom("users").select(["id", "email", "defaultCurrency", "language", "theme"]).where("id", "=", req.user!.id).executeTakeFirstOrThrow();
+  const user = await db.selectFrom("users").select(["id", "email", "language", "theme"]).where("id", "=", req.user!.id).executeTakeFirstOrThrow();
   res.json(publicUser(user));
 });
 
 app.put("/api/user/settings", requireAuth, async (req: AuthedRequest, res) => {
-  const body = z.object({ defaultCurrency: currencySchema, language: z.enum(["en", "fi"]), theme: z.enum(["light", "dark"]) }).safeParse(req.body);
+  const body = z.object({ language: z.enum(["en", "fi"]), theme: z.enum(["light", "dark"]) }).safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: "Invalid settings" });
-  const user = await db.updateTable("users").set(body.data).where("id", "=", req.user!.id).returning(["id", "email", "defaultCurrency", "language", "theme"]).executeTakeFirstOrThrow();
+  const user = await db.updateTable("users").set(body.data).where("id", "=", req.user!.id).returning(["id", "email", "language", "theme"]).executeTakeFirstOrThrow();
   res.json(publicUser(user));
 });
 
@@ -151,7 +150,7 @@ app.post("/api/maintenance/:carId", requireAuth, requireCarOwner, async (req: Au
     description: z.string().min(1),
     cost: z.number().min(0).nullable().optional(),
     type: maintenanceTypeSchema.default("maintenance"),
-    currency: currencySchema.default("EUR")
+    currency: z.literal("EUR").default("EUR")
   }).safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: "Invalid maintenance record" });
   const row = await db.insertInto("maintenance").values({ ...body.data, cost: body.data.cost ?? null, carId: Number(req.params.carId), createdAt: now() }).returningAll().executeTakeFirstOrThrow();
@@ -195,7 +194,7 @@ app.get("/api/service/:carId/car", async (req, res) => {
 app.post("/api/service/:carId/maintenance", async (req, res) => {
   const car = await db.selectFrom("cars").select(["id"]).where("id", "=", Number(req.params.carId)).executeTakeFirst();
   if (!car) return res.status(404).json({ error: "Vehicle not found" });
-  const body = z.object({ date: z.string(), kilometers: z.number().int().min(0), title: z.string().min(1), description: z.string().min(1), cost: z.number().min(0).nullable().optional(), type: maintenanceTypeSchema.default("maintenance"), currency: currencySchema.default("EUR") }).safeParse(req.body);
+  const body = z.object({ date: z.string(), kilometers: z.number().int().min(0), title: z.string().min(1), description: z.string().min(1), cost: z.number().min(0).nullable().optional(), type: maintenanceTypeSchema.default("maintenance"), currency: z.literal("EUR").default("EUR") }).safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: "Invalid maintenance record" });
   const row = await db.insertInto("maintenance").values({ ...body.data, cost: body.data.cost ?? null, carId: car.id, createdAt: now() }).returningAll().executeTakeFirstOrThrow();
   res.json(row);
@@ -212,13 +211,12 @@ app.post("/api/service/:maintenanceId/photos", upload.array("photos", 5), async 
 app.get("/api/export/pdf/:carId", requireAuth, requireCarOwner, async (req, res) => {
   const car = await db.selectFrom("cars").selectAll().where("id", "=", Number(req.params.carId)).executeTakeFirstOrThrow();
   const rows = await db.selectFrom("maintenance").selectAll().where("carId", "=", car.id).orderBy("date", "desc").execute();
-  const user = await db.selectFrom("users").select(["language", "defaultCurrency"]).where("id", "=", (req as AuthedRequest).user!.id).executeTakeFirstOrThrow();
+  const user = await db.selectFrom("users").select(["language"]).where("id", "=", (req as AuthedRequest).user!.id).executeTakeFirstOrThrow();
   const language = user.language;
   const text = pdfText[language];
   const locale = language === "fi" ? "fi-FI" : "en-US";
   const formatDate = (value: string) => new Intl.DateTimeFormat(locale).format(new Date(value));
-  const formatCost = (cost: number | null, currency: Currency) => new Intl.NumberFormat(locale, { style: "currency", currency }).format(cost ?? 0);
-  const reportCurrency = rows[0]?.currency ?? user.defaultCurrency;
+  const formatCost = (cost: number | null) => new Intl.NumberFormat(locale, { style: "currency", currency: "EUR" }).format(cost ?? 0);
   const totalCosts = rows.reduce((sum, row) => sum + (row.cost ?? 0), 0);
   const serviceCosts = rows.filter((row) => row.type === "maintenance").reduce((sum, row) => sum + (row.cost ?? 0), 0);
   const repairCosts = rows.filter((row) => row.type === "repair").reduce((sum, row) => sum + (row.cost ?? 0), 0);
@@ -231,9 +229,9 @@ app.get("/api/export/pdf/:carId", requireAuth, requireCarOwner, async (req, res)
   doc.moveDown().fontSize(12).text(`${text.vehicle}: ${car.brand} ${car.model} (${car.year})`);
   doc.moveDown();
   doc.fontSize(15).text(text.totalCosts);
-  doc.fontSize(10).text(`${text.totalCosts}: ${formatCost(totalCosts, reportCurrency)}`);
-  doc.text(`${text.serviceCosts}: ${formatCost(serviceCosts, reportCurrency)}`);
-  doc.text(`${text.repairCosts}: ${formatCost(repairCosts, reportCurrency)}`);
+  doc.fontSize(10).text(`${text.totalCosts}: ${formatCost(totalCosts)}`);
+  doc.text(`${text.serviceCosts}: ${formatCost(serviceCosts)}`);
+  doc.text(`${text.repairCosts}: ${formatCost(repairCosts)}`);
   doc.moveDown();
 
   if (!rows.length) {
@@ -242,7 +240,7 @@ app.get("/api/export/pdf/:carId", requireAuth, requireCarOwner, async (req, res)
 
   rows.forEach((row) => {
     doc.fontSize(14).text(`${formatDate(row.date)} - ${row.title}`);
-    doc.fontSize(10).text(`${text.kilometers}: ${row.kilometers.toLocaleString(locale)} km | ${text.type}: ${text[row.type]} | ${text.cost}: ${formatCost(row.cost, row.currency)}`);
+    doc.fontSize(10).text(`${text.kilometers}: ${row.kilometers.toLocaleString(locale)} km | ${text.type}: ${text[row.type]} | ${text.cost}: ${formatCost(row.cost)}`);
     doc.text(row.description).moveDown();
   });
   doc.end();

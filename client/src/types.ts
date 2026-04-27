@@ -1,4 +1,3 @@
-export type Currency = "EUR" | "USD" | "GBP" | "JPY" | "THB" | "INR";
 export type Language = "en" | "fi";
 export type Theme = "light" | "dark";
 export type MaintenanceType = "maintenance" | "repair";
@@ -6,7 +5,6 @@ export type MaintenanceType = "maintenance" | "repair";
 export type User = {
   id: number;
   email: string;
-  defaultCurrency: Currency;
   language: Language;
   theme: Theme;
 };
@@ -36,6 +34,6 @@ export type MaintenanceRecord = {
   description: string;
   cost: number | null;
   type: MaintenanceType;
-  currency: Currency;
+  currency: "EUR";
   photos: Photo[];
 };

@@ -7,7 +7,7 @@ import { useApp } from "../state";
 import type { Car as CarType } from "../types";
 
 export function CarsPage() {
-  const { token, user, t } = useApp();
+  const { token, t } = useApp();
   const [cars, setCars] = useState<CarType[]>([]);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", brand: "", model: "", year: new Date().getFullYear() });
@@ -55,7 +55,7 @@ export function CarsPage() {
                 <div className="metric-row">
                   <span>{car.recordCount} {t("records")}</span>
                   <span>{car.maxKm.toLocaleString()} km</span>
-                  <span>{money(car.totalCost, user?.defaultCurrency)}</span>
+                  <span>{money(car.totalCost)}</span>
                 </div>
               </div>
               <div className="card-actions">

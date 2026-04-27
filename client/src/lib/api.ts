@@ -13,8 +13,8 @@ export async function api<T>(url: string, options: ApiOptions = {}): Promise<T> 
   return response.json();
 }
 
-export function money(value: number | null | undefined, currency = "EUR") {
-  return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value ?? 0);
+export function money(value: number | null | undefined) {
+  return new Intl.NumberFormat(undefined, { style: "currency", currency: "EUR" }).format(value ?? 0);
 }
 
 export function nextMaintenance(records: { date: string; kilometers: number }[]) {

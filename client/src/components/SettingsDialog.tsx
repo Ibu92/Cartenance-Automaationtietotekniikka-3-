@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { useApp } from "../state";
-import type { Currency, Language, Theme, User } from "../types";
+import type { Language, Theme, User } from "../types";
 
 export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { token, user, login, t } = useApp();
-  const [form, setForm] = useState({ defaultCurrency: "EUR" as Currency, language: "en" as Language, theme: "dark" as Theme });
+  const [form, setForm] = useState({ language: "en" as Language, theme: "dark" as Theme });
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (user) setForm({ defaultCurrency: user.defaultCurrency, language: user.language, theme: user.theme === "light" ? "light" : "dark" });
+    if (user) setForm({ language: user.language, theme: user.theme === "light" ? "light" : "dark" });
   }, [user, open]);
 
   if (!open) return null;
@@ -31,7 +31,6 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
           <h2>{t("settings")}</h2>
           <button className="icon-button" onClick={onClose} aria-label={t("close")}>×</button>
         </div>
-        <label>{t("currency")}<select value={form.defaultCurrency} onChange={(e) => setForm({ ...form, defaultCurrency: e.target.value as Currency })}>{["EUR", "USD", "GBP", "JPY", "THB", "INR"].map((c) => <option key={c}>{c}</option>)}</select></label>
         <label>{t("language")}<select value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value as Language })}><option value="en">{t("english")}</option><option value="fi">{t("finnish")}</option></select></label>
         <label>{t("theme")}<select value={form.theme} onChange={(e) => setForm({ ...form, theme: e.target.value as Theme })}><option value="light">{t("light")}</option><option value="dark">{t("dark")}</option></select></label>
         {error && <p className="error">{error}</p>}
